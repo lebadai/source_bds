@@ -284,28 +284,24 @@ class PaymentPolicyView(BaseAPIView):
     def create(self, request):
 
         content = check_body(request.body)
-
         key_content_list = list(content.keys())
         self.payment_policy_validate(content=content, payment_policy_list=key_content_list, is_created=True)                   
 
         if 'payment_policy_groups' in key_content_list:
-            policy_group_lst = len(content['payment_policy_groups'])
-            payment_policy_groups = content['payment_policy_groups']
+            policy_group_lst = content['payment_policy_groups']
             payment_policy = SaleProjectPaymentPolicy.objects.create(
                 payment_policy_name=content['payment_policy_name'],
                 payment_policy_date_from=content['payment_policy_date_from'],
                 payment_policy_date_to=content['payment_policy_date_to']
             )
 
-            for policy_group_index in range(policy_group_lst):
-                payment_policy_grp = payment_policy_groups[policy_group_index]
-
-                if not isinstance(payment_policy_grp, dict):
+            for policy_group in policy_group_lst:
+                if not isinstance(policy_group, dict):
                     return self.http_exception(description='payment policy group must be dict')
-                key_grp_lst = list(payment_policy_grp.keys())
+                key_grp_lst = list(policy_group.keys())
                 total = [] 
                 if 'payment_policy_details' in key_grp_lst:
-                    group_detais = payment_policy_grp['payment_policy_details']
+                    group_detais = policy_group['payment_policy_details']
                     for grp_dtl in group_detais:
                         key_values_list = list(grp_dtl.keys())
                         if "detail_values" in key_values_list:
@@ -314,52 +310,53 @@ class PaymentPolicyView(BaseAPIView):
                                 total.append(dtl_vls['detail_value_payment_progressive_percent']) 
 
                 check_progressive_percent(total)
-                self.payment_policy_group_validate(content=payment_policy_grp, group_list=key_grp_lst, is_created=True)
+                self.payment_policy_group_validate(content=policy_group, group_list=key_grp_lst, is_created=True)
+
                 policy_grp = SaleProjectPaymentPolicyGroup.objects.create(
                     project_payment_policy_id_id=int(payment_policy.id),
-                    group_type_id=payment_policy_grp['group_type_id'],
-                    group_description=payment_policy_grp['group_description'],
-                    group_start_date=payment_policy_grp['group_start_date'],
-                    group_end_date=payment_policy_grp['group_end_date'],
-                    group_active_flag=payment_policy_grp['group_active_flag'],
+                    group_type_id=policy_group['group_type_id'],
+                    group_description=policy_group['group_description'],
+                    group_start_date=policy_group['group_start_date'],
+                    group_end_date=policy_group['group_end_date'],
+                    group_active_flag=policy_group['group_active_flag'],
                 )
 
-                if 'payment_policy_details' in payment_policy_grp:
-                    policy_detail_lst = len(payment_policy_grp['payment_policy_details'])
-                    group_detail_list = payment_policy_grp['payment_policy_details']
-                    for policy_detail_index in range(policy_detail_lst):
-                        payment_policy_dtl = group_detail_list[policy_detail_index]
+                if 'payment_policy_details' in policy_group:
+                    # policy_detail_lst = len(payment_policy_grp['payment_policy_details'])
+                    # for policy_detail_index in range(policy_detail_lst):
+                    payment_policy_details = policy_group['payment_policy_details']
+                    for group_detail in payment_policy_details:
                         
-                        if not isinstance(payment_policy_dtl, dict):
-                            return self.http_exception(description='payment policy group must be dict')
+                        if not isinstance(group_detail, dict):
+                            return self.http_exception(description='group detail must be dict')
 
-                        key_dtl_lst = list(payment_policy_dtl.keys())
-                        self.payment_policy_detail_validate(content=payment_policy_dtl, detail_list=key_dtl_lst, is_created=True)
-                        if 'detail_values' in payment_policy_dtl:
-                            policy_detail_values_lst = len(payment_policy_dtl['detail_values'])
-                            group_detail_values_list = payment_policy_dtl['detail_values']
+                        key_dtl_lst = list(group_detail.keys())
+                        self.payment_policy_detail_validate(content=group_detail, detail_list=key_dtl_lst, is_created=True)
+                        if 'detail_values' in group_detail:
+                            # policy_detail_values_lst = len(group_detail['detail_values'])
+                            group_detail_values_list = group_detail['detail_values']
 
                             grp_dtl = SaleProjectPaymentPolicyGroupDetail.objects.create(
                                 project_payment_policy_group_id_id=policy_grp.id,
-                                detail_time_type=payment_policy_dtl['detail_time_type'],
-                                detail_name=payment_policy_dtl['detail_name'],
-                                detail_time_value=payment_policy_dtl['detail_time_value'],
-                                detail_payment_type=payment_policy_dtl['detail_payment_type'],
-                                detail_time_to_date=payment_policy_dtl['detail_time_to_date'],
-                                detail_time_value_master_unit=payment_policy_dtl['detail_time_value_master_unit'],
-                                detail_progressive_percent=payment_policy_dtl['detail_progressive_percent'],
-                                detail_discount_percent=payment_policy_dtl['detail_discount_percent'],
-                                detail_content=payment_policy_dtl['detail_content'],
-                                detail_discount_note=payment_policy_dtl['detail_discount_note'],
+                                detail_time_type=group_detail['detail_time_type'],
+                                detail_name=group_detail['detail_name'],
+                                detail_time_value=group_detail['detail_time_value'],
+                                detail_payment_type=group_detail['detail_payment_type'],
+                                detail_time_to_date=group_detail['detail_time_to_date'],
+                                detail_time_value_master_unit=group_detail['detail_time_value_master_unit'],
+                                detail_progressive_percent=group_detail['detail_progressive_percent'],
+                                detail_discount_percent=group_detail['detail_discount_percent'],
+                                detail_content=group_detail['detail_content'],
+                                detail_discount_note=group_detail['detail_discount_note'],
                             )
 
-                            for policy_detail_values_index in range(policy_detail_values_lst):
-                                payment_policy_dtl_vls = group_detail_values_list[policy_detail_values_index]
-                                if not isinstance(payment_policy_dtl_vls, dict):
+                            for policy_detail_values_index in group_detail_values_list:
+                                group_detail_vls = group_detail
+                                if not isinstance(group_detail_vls, dict):
                                     return self.http_exception(description='payment policy group must be dict')
                                 
-                                key_dtl_vls_lst = list(payment_policy_dtl_vls.keys())
-                                self.payment_policy_detail_value_validate(content=payment_policy_dtl_vls, detail_values_list=key_dtl_vls_lst, is_created=True)
+                                key_dtl_vls_lst = list(group_detail_vls.keys())
+                                self.payment_policy_detail_value_validate(content=group_detail_vls, detail_values_list=key_dtl_vls_lst, is_created=True)
                                 lst_detail_values_ret = []
                                 
                                 grp_dtl_vl = SaleProjectPaymentPolicyGroupDetailValue.objects.create(
